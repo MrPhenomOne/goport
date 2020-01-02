@@ -5,10 +5,11 @@ import (
 	"github.com/akamensky/argparse"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
-	"os"
-	"time"
-	//"net"
 	"log"
+	"net"
+	"os"
+	"strings"
+	"time"
 )
 
 var (
@@ -19,27 +20,42 @@ var (
 )
 
 func main() {
-	devices := listDevices()
-	for num, i := range devices {
-		fmt.Printf("Device %d: %s \n", num, i.Name)
-	}
-	ifaceParser := argparse.NewParser("iface", "Pass the interface using to scan")
-	iface := ifaceParser.String("i", "interface", &argparse.Options{Required: true,
-		Help: "Put network interface"})
+	ifaceParser := argparse.NewParser("iface", "Capture the packets")
+	iface := ifaceParser.String("i", "interface", &argparse.Options{Help: "Network interface"})
+	list := ifaceParser.Flag("l", "list", &argparse.Options{Help: "List all devices"})
+	ble := ifaceParser.Flag("b", "ble", &argparse.Options{Help: "Discover Bluetooth devices"})
 	err = ifaceParser.Parse(os.Args)
-	if err == nil {
+	if err != nil {
+		fmt.Print(ifaceParser.Usage(err))
+	}
+
+	if *iface != "" && checkDevice(iface) {
 		capturePackets(iface)
-	} else {
-		log.Fatal(err)
+	} else if *iface == "" && *list {
+		for num, i := range listDevices() {
+			fmt.Printf("Device %d: %s \n", num, i.Name)
+		}
+	} else if *ble {
+		runBLE()
 	}
 }
 
-func listDevices() []pcap.Interface {
-	devices, err := pcap.FindAllDevs()
+func listDevices() []net.Interface {
+	devices, err := net.Interfaces()
 	if err != nil {
 		log.Fatal(err)
 	}
 	return devices
+}
+
+func checkDevice(input *string) bool {
+	allDevices := listDevices()
+	for _, i := range allDevices {
+		if strings.Compare(*input, i.Name) == 1 {
+			return true
+		}
+	}
+	return false
 }
 
 func capturePackets(deviceChoice *string) {
@@ -49,7 +65,7 @@ func capturePackets(deviceChoice *string) {
 	}
 	defer handle.Close()
 
-	filter := "port 80"
+	filter := "port 8443"
 	err = handle.SetBPFFilter(filter)
 	if err != nil {
 		log.Fatal(err)
