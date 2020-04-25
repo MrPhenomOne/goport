@@ -30,7 +30,7 @@ func onStateChanged(d gatt.Device, s gatt.State) {
 }
 
 func onPeriphDiscovered(p gatt.Peripheral, a *gatt.Advertisement, _ int) {
-	fmt.Printf("\nPeripheral ID:%s, NAME:(%s)\n", p.ID(), p.Name())
+	fmt.Printf("\nPeripheral ID %s, NAME: (%s)\n", p.ID(), p.Name())
 	peripherals = append(peripherals, p.ID())
 	fmt.Println("  Local Name        =", a.LocalName)
 	fmt.Println("  TX Power Level    =", a.TxPowerLevel)
@@ -51,7 +51,11 @@ func runBLE() {
 	select {}
 }
 
+// SetupCloseHandler creates a 'listener' on a new goroutine which will notify the
+// program if it receives an interrupt from the OS. We then handle this by calling
+// our clean up procedure and exiting the program. Channel here is to receive notification
 func SetupCloseHandler() {
+	peripherals = nil
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
