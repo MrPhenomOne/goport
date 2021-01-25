@@ -1,3 +1,3 @@
 [submodule "go-bluetooth"]
 	path = go-bluetooth
-	url = https://github.com/muka/go-bluetooth.git
+	url = https://github.com/venngar/go-bluetooth.git
